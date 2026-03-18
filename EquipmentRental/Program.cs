@@ -1,5 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
-namespace EquipmentRental;
+﻿namespace EquipmentRental;
 
 using EquipmentRental.Models;
 using EquipmentRental.Services;
@@ -10,7 +9,6 @@ class Program
     {
         var service = new EquipmentRentalService([], []);
         service.AddUser("Jan", "Kowalski", UserType.STUDENT);
-        Console.WriteLine("Hello, World!");
     }
 }
 
