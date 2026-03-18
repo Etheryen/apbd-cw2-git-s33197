@@ -1,9 +1,9 @@
 namespace EquipmentRental.Models;
 
-public abstract class Equipment
+public abstract class Equipment(string name, string serialNumber)
 {
-    public Guid Id { get; }
-    public string Name { get; }
-    public bool IsAvailable { get; set; }
-    public string SerialNumber { get; }
+    public Guid Id { get; } = Guid.NewGuid();
+    public string Name { get; init; } = name;
+    public bool IsAvailable { get; set; } = true;
+    public string SerialNumber { get; init; } = serialNumber;
 }

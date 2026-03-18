@@ -6,10 +6,10 @@ public enum UserType
     STUDENT
 }
 
-public abstract class User
+public class User(string firstName, string lastName, UserType type)
 {
-    public Guid Id { get; }
-    public string FirstName { get; }
-    public string LastName { get; }
-    public UserType Type { get; }
+    public Guid Id { get; } = Guid.NewGuid();
+    public string FirstName { get; } = firstName;
+    public string LastName { get; } = lastName;
+    public UserType Type { get; } = type;
 }
