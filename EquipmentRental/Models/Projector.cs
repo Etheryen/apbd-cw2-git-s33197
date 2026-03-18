@@ -4,5 +4,8 @@ public sealed class Projector(string name, string serialNumber, (int, int) resol
 {
     public (int, int) Resolution { get; } = resolution;
     public bool IsWireless { get; } = isWireless;
+
+    public override string ToString() =>
+        $"{base.ToString()}, Resolution: {Resolution}, IsWireless: {IsAvailable}";
 }
 

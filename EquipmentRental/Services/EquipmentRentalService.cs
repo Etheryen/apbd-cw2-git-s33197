@@ -15,4 +15,20 @@ public sealed class EquipmentRentalService(ICollection<User> users, ICollection<
 
     public void AddProjector(string name, string serialNumber, (int, int) resolution, bool isWireless) =>
         equipment.Add(new Projector(name, serialNumber, resolution, isWireless));
+
+    public void LogEquipment()
+    {
+        Console.WriteLine("---");
+        Console.WriteLine("Equipment:");
+        Console.WriteLine(string.Join('\n', equipment));
+        Console.WriteLine("---");
+    }
+
+    public void LogAvailableEquipment()
+    {
+        Console.WriteLine("---");
+        Console.WriteLine("Available equipment:");
+        Console.WriteLine(string.Join('\n', equipment.Where(x => x.IsAvailable)));
+        Console.WriteLine("---");
+    }
 }

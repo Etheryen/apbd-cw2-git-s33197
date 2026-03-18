@@ -4,4 +4,7 @@ public sealed class Laptop(string name, string serialNumber, string cpu, double 
 {
     public string Cpu { get; init; } = cpu;
     public double ScreenSizeInches { get; } = screenSizeInches;
+
+    public override string ToString() =>
+        $"{base.ToString()}, Cpu: {Cpu}, ScreenSizeInches: {ScreenSizeInches}";
 }
