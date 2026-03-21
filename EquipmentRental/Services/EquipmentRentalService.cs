@@ -91,8 +91,8 @@ public sealed class EquipmentRentalService(
         equipment.IsAvailable = false;
     }
 
-    public IReadOnlyList<Rental> GetUserRentals(Guid userId) =>
-        rentalsRepository.Where(x => x.User.Id == userId).ToList();
+    public IReadOnlyList<Rental> GetActiveUserRentals(Guid userId) =>
+        rentalsRepository.Where(x => x.User.Id == userId && x.ReturnedAt is null).ToList();
 
     private double CalculateFee(DateTime deadline, DateTime returnedAt)
     {
