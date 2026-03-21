@@ -94,6 +94,21 @@ public sealed class EquipmentRentalService(
     public IReadOnlyList<Rental> GetActiveUserRentals(Guid userId) =>
         rentalsRepository.Where(x => x.User.Id == userId && x.ReturnedAt is null).ToList();
 
+    public IReadOnlyList<Rental> GetPrematureRentals() =>
+        rentalsRepository.Where(x => x.ReturnedAt < x.RentedTo).ToList();
+
+    public string GetRaport()
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine($"Total equipment count: {equipmentRepository.Count}");
+        sb.AppendLine($"Unavailable equipment count: {equipmentRepository.Where(x => !x.IsAvailable).Count()}");
+        sb.AppendLine($"Rented equipment count: {equipmentRepository.Where(e => rentalsRepository.Any(r => r.Equipment == e && r.ReturnedAt is null)).Count()}");
+        sb.AppendLine($"Total fees amount: {rentalsRepository.Sum(x => x.Fee)}");
+
+        return sb.ToString();
+    }
+
     private double CalculateFee(DateTime deadline, DateTime returnedAt)
     {
         var diff = returnedAt - deadline;
