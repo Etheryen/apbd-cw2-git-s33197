@@ -9,6 +9,11 @@ public sealed class EquipmentRentalService(
     ICollection<Equipment> equipmentRepository,
     ICollection<Rental> rentalsRepository)
 {
+    const int MAX_STUDENT_CURRENT_RENTALS = 2;
+    const int MAX_EMPLOYEE_CURRENT_RENTALS = 5;
+
+    const double HOURLY_FEE_AMOUNT = 0.67;
+
     public void AddUser(string firstName, string lastName, UserType type) =>
         usersRepository.Add(new User(firstName, lastName, type));
 
@@ -30,18 +35,20 @@ public sealed class EquipmentRentalService(
     public void Rent(Guid equipmentId, Guid userId)
     {
         var equipment = equipmentRepository.SingleOrDefault(x => x.Id == equipmentId);
-        if (equipment is null)
-        {
-            Console.WriteLine("Equipment not found");
-            return;
-        }
+        if (equipment is null) throw new InvalidOperationException("Equipment not found");
+
+        if (!equipment.IsAvailable) throw new InvalidOperationException("Equipment unavailable");
 
         var user = usersRepository.SingleOrDefault(x => x.Id == userId);
-        if (user is null)
-        {
-            Console.WriteLine("User not found");
-            return;
-        }
+        if (user is null) throw new InvalidOperationException("User not found");
+
+        var currentRentalsCount = rentalsRepository.Where(x => x.User == user && x.ReturnedAt is null).Count();
+
+        if (user.Type == UserType.STUDENT && currentRentalsCount >= MAX_STUDENT_CURRENT_RENTALS)
+            throw new InvalidOperationException("Student has max current rentals");
+
+        if (user.Type == UserType.EMPLOYEE && currentRentalsCount >= MAX_EMPLOYEE_CURRENT_RENTALS)
+            throw new InvalidOperationException("Employee has max current rentals");
 
         rentalsRepository.Add(new Rental(user, equipment));
     }
@@ -49,25 +56,13 @@ public sealed class EquipmentRentalService(
     public void Return(Guid equipmentId, Guid userId)
     {
         var equipment = equipmentRepository.SingleOrDefault(x => x.Id == equipmentId);
-        if (equipment is null)
-        {
-            Console.WriteLine("Equipment not found");
-            return;
-        }
+        if (equipment is null) throw new InvalidOperationException("Equipment not found");
 
         var user = usersRepository.SingleOrDefault(x => x.Id == userId);
-        if (user is null)
-        {
-            Console.WriteLine("User not found");
-            return;
-        }
+        if (user is null) throw new InvalidOperationException("User not found");
 
         var rental = rentalsRepository.LastOrDefault(x => x.ReturnedAt is null && x.User == user && x.Equipment == equipment);
-        if (rental is null)
-        {
-            Console.WriteLine("Rental not found");
-            return;
-        }
+        if (rental is null) throw new InvalidOperationException("Rental not found");
 
         rental.ReturnedAt = DateTime.Now;
         rental.Fee = CalculateFee(rental.RentedTo, rental.ReturnedAt.Value);
@@ -76,17 +71,10 @@ public sealed class EquipmentRentalService(
     public void MarkUnavailable(Guid equipmentId)
     {
         var equipment = equipmentRepository.SingleOrDefault(x => x.Id == equipmentId);
-        if (equipment is null)
-        {
-            Console.WriteLine("Equipment not found");
-            return;
-        }
+        if (equipment is null) throw new InvalidOperationException("Equipment not found");
 
         if (rentalsRepository.Any(x => x.Equipment == equipment && x.ReturnedAt is null))
-        {
-            Console.WriteLine("Equipment currently rented");
-            return;
-        }
+            throw new InvalidOperationException("Equipment currently rented");
 
         equipment.IsAvailable = false;
     }
@@ -112,7 +100,7 @@ public sealed class EquipmentRentalService(
     private double CalculateFee(DateTime deadline, DateTime returnedAt)
     {
         var diff = returnedAt - deadline;
-        return Math.Max(0, diff.TotalHours * 0.67);
+        return Math.Max(0, diff.TotalHours) * HOURLY_FEE_AMOUNT;
     }
 
     private bool CanBeRented(Equipment equipment) =>
