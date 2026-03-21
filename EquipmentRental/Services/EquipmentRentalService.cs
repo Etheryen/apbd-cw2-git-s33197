@@ -1,5 +1,7 @@
 namespace EquipmentRental.Services;
 
+using System.Text;
+
 using EquipmentRental.Models;
 
 public sealed class EquipmentRentalService(
@@ -19,22 +21,11 @@ public sealed class EquipmentRentalService(
     public void AddProjector(string name, string serialNumber, (int, int) resolution, bool isWireless) =>
         equipmentRepository.Add(new Projector(name, serialNumber, resolution, isWireless));
 
-    public void LogEquipment()
-    {
-        Console.WriteLine("---");
-        Console.WriteLine("Equipment:");
-        Console.WriteLine(string.Join('\n', equipmentRepository));
-        Console.WriteLine("---");
-    }
+    public IReadOnlyList<Equipment> GetEquipment() =>
+        equipmentRepository.ToList();
 
-    public void LogAvailableEquipment()
-    {
-        var available = equipmentRepository.Where(canBeRented);
-        Console.WriteLine("---");
-        Console.WriteLine("Available equipment:");
-        Console.WriteLine(string.Join('\n', available));
-        Console.WriteLine("---");
-    }
+    public IReadOnlyList<Equipment> GetAvailableEquipment() =>
+        equipmentRepository.Where(CanBeRented).ToList();
 
     public void Rent(Guid equipmentId, Guid userId)
     {
@@ -79,18 +70,39 @@ public sealed class EquipmentRentalService(
         }
 
         rental.ReturnedAt = DateTime.Now;
-        rental.Fee = calculateFee(rental.RentedTo, rental.ReturnedAt.Value);
+        rental.Fee = CalculateFee(rental.RentedTo, rental.ReturnedAt.Value);
     }
 
-    private double calculateFee(DateTime deadline, DateTime returnedAt)
+    public void MarkUnavailable(Guid equipmentId)
+    {
+        var equipment = equipmentRepository.SingleOrDefault(x => x.Id == equipmentId);
+        if (equipment is null)
+        {
+            Console.WriteLine("Equipment not found");
+            return;
+        }
+
+        if (rentalsRepository.Any(x => x.Equipment == equipment && x.ReturnedAt is null))
+        {
+            Console.WriteLine("Equipment currently rented");
+            return;
+        }
+
+        equipment.IsAvailable = false;
+    }
+
+    public IReadOnlyList<Rental> GetUserRentals(Guid userId) =>
+        rentalsRepository.Where(x => x.User.Id == userId).ToList();
+
+    private double CalculateFee(DateTime deadline, DateTime returnedAt)
     {
         var diff = returnedAt - deadline;
         return Math.Max(0, diff.TotalHours * 0.67);
     }
 
-    private bool canBeRented(Equipment equipment) =>
-        equipment.IsAvailable && !isRented(equipment);
+    private bool CanBeRented(Equipment equipment) =>
+        equipment.IsAvailable && !IsRented(equipment);
 
-    private bool isRented(Equipment equipment) =>
+    private bool IsRented(Equipment equipment) =>
          rentalsRepository.Any(x => x.Equipment == equipment);
 }
