@@ -1,10 +1,11 @@
 namespace EquipmentRental.Models;
 
-public sealed class Rental
+public sealed class Rental(User user, Equipment equipment)
 {
-    public User User { get; }
-    public Equipment Equipment { get; }
-    public DateTime RentedAt { get; }
-    public DateTime RentedTo { get; }
-    public DateTime ReturnedAt { get; }
+    public User User { get; } = user;
+    public Equipment Equipment { get; } = equipment;
+    public DateTime RentedAt { get; } = DateTime.Now;
+    public DateTime RentedTo { get; } = DateTime.Now + TimeSpan.FromDays(7);
+    public DateTime? ReturnedAt { get; set; } = null;
+    public double Fee { get; set; } = default;
 }
