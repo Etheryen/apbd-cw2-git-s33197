@@ -14,17 +14,33 @@ public sealed class EquipmentRentalService(
 
     const double HOURLY_FEE_AMOUNT = 0.67;
 
-    public void AddUser(string firstName, string lastName, UserType type) =>
-        usersRepository.Add(new User(firstName, lastName, type));
+    public Guid AddUser(string firstName, string lastName, UserType type)
+    {
+        var newUser = new User(firstName, lastName, type);
+        usersRepository.Add(newUser);
+        return newUser.Id;
+    }
 
-    public void AddCamera(string name, string serialNumber, double megaPixels, (int, int) maxResolution) =>
-        equipmentRepository.Add(new Camera(name, serialNumber, megaPixels, maxResolution));
+    public Guid AddCamera(string name, string serialNumber, double megaPixels, (int, int) maxResolution)
+    {
+        var newCamera = new Camera(name, serialNumber, megaPixels, maxResolution);
+        equipmentRepository.Add(newCamera);
+        return newCamera.Id;
+    }
 
-    public void AddLaptop(string name, string serialNumber, string cpu, double screenSizeInches) =>
-        equipmentRepository.Add(new Laptop(name, serialNumber, cpu, screenSizeInches));
+    public Guid AddLaptop(string name, string serialNumber, string cpu, double screenSizeInches)
+    {
+        var newLaptop = new Laptop(name, serialNumber, cpu, screenSizeInches);
+        equipmentRepository.Add(newLaptop);
+        return newLaptop.Id;
+    }
 
-    public void AddProjector(string name, string serialNumber, (int, int) resolution, bool isWireless) =>
-        equipmentRepository.Add(new Projector(name, serialNumber, resolution, isWireless));
+    public Guid AddProjector(string name, string serialNumber, (int, int) resolution, bool isWireless)
+    {
+        var newProjector = new Projector(name, serialNumber, resolution, isWireless);
+        equipmentRepository.Add(newProjector);
+        return newProjector.Id;
+    }
 
     public IReadOnlyList<Equipment> GetEquipment() =>
         equipmentRepository.ToList();
@@ -32,7 +48,11 @@ public sealed class EquipmentRentalService(
     public IReadOnlyList<Equipment> GetAvailableEquipment() =>
         equipmentRepository.Where(CanBeRented).ToList();
 
-    public void Rent(Guid equipmentId, Guid userId)
+
+    public void Rent(Guid equipmentId, Guid userId) =>
+        Rent(equipmentId, userId, TimeSpan.FromDays(7));
+
+    public void Rent(Guid equipmentId, Guid userId, TimeSpan duration)
     {
         var equipment = equipmentRepository.SingleOrDefault(x => x.Id == equipmentId);
         if (equipment is null) throw new InvalidOperationException("Equipment not found");
@@ -50,7 +70,7 @@ public sealed class EquipmentRentalService(
         if (user.Type == UserType.EMPLOYEE && currentRentalsCount >= MAX_EMPLOYEE_CURRENT_RENTALS)
             throw new InvalidOperationException("Employee has max current rentals");
 
-        rentalsRepository.Add(new Rental(user, equipment));
+        rentalsRepository.Add(new Rental(user, equipment, duration));
     }
 
     public void Return(Guid equipmentId, Guid userId)
@@ -99,8 +119,8 @@ public sealed class EquipmentRentalService(
 
     private double CalculateFee(DateTime deadline, DateTime returnedAt)
     {
-        var diff = returnedAt - deadline;
-        return Math.Max(0, diff.TotalHours) * HOURLY_FEE_AMOUNT;
+        var fullHoursExceeded = Math.Floor((returnedAt - deadline).TotalHours);
+        return Math.Max(0, fullHoursExceeded) * HOURLY_FEE_AMOUNT;
     }
 
     private bool CanBeRented(Equipment equipment) =>
